@@ -1,13 +1,15 @@
 import { useState, useEffect } from "react"
 import ChatList from "./components/ChatList"
 import ChatWindow from "./components/ChatWindow"
-import { Button } from "@/components/ui/button"
+import Sidebar from "./components/Sidebar"
 
 const STORAGE_KEY = "gemini_chats_v1"
 const GEMINI_MODEL = "gemini-2.0-flash-exp"
 
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY
+
+
 export default function App() {
-  const [apiKey, setApiKey] = useState(localStorage.getItem("gemini_api_key") || "")
   const [chats, setChats] = useState(() => {
     const saved = localStorage.getItem(STORAGE_KEY)
     return saved ? JSON.parse(saved) : []
@@ -25,7 +27,7 @@ export default function App() {
   }
 
   async function sendMessage(text) {
-    if (!apiKey) return alert("Please enter your Gemini API key")
+    if (!API_KEY) return alert("Missing Gemini API key in environment variables")
 
     setChats(prev =>
       prev.map(c =>
@@ -40,7 +42,7 @@ export default function App() {
 
     try {
       const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${API_KEY}`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -67,35 +69,12 @@ export default function App() {
 
   return (
     <div className="flex h-screen">
-      <div className="w-64 bg-gray-900 text-gray-100 flex flex-col h-screen p-3">
-        <h1 className="text-lg font-bold mb-4">PXLSGRDS Chat</h1>
-
-        <input
-          type="password"
-          className="w-full mb-3 px-3 py-2 text-sm rounded bg-gray-800 text-gray-100 focus:outline-none"
-          placeholder="API Key"
-          value={apiKey}
-          onChange={e => {
-            setApiKey(e.target.value)
-            localStorage.setItem("gemini_api_key", e.target.value)
-          }}
-        />
-
-
-        <Button onClick={createChat}
-          variant="ghost"
-          className="mb-3 w-full justify-start border-gray-400 text-gray-300 hover:bg-gray-800 hover:text-white py-4"
-        >
-          + New Chat
-        </Button>
-
-        <ChatList
-          chats={chats}
-          activeChatId={activeChatId}
-          onSelect={setActiveChatId}
-        />
-      </div>
-
+      <Sidebar
+        chats={chats}
+        activeChatId={activeChatId}
+        setActiveChatId={setActiveChatId}
+        createChat={createChat}
+      />
       <div className="flex-1 bg-gray-100">
         {activeChatId ? (
           <ChatWindow
@@ -103,7 +82,7 @@ export default function App() {
             onSend={sendMessage}
           />
         ) : (
-          <div className="flex items-center justify-center h-full text-gray-500">
+          <div className="flex items-center justify-center h-full text-gray-500 bg-[#212121]">
             Select or create a chat
           </div>
         )}
